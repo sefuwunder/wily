@@ -25,13 +25,13 @@ main(void)
 	CHECK(s != 0, "alloc");
 	CHECK(session_add_col(s, 600) == 0, "col0");
 	CHECK(session_add_col(s, 400) == 1, "col1");
-	CHECK(session_add_win(s, 0, "my file.md", 10, 5, 500, 0, -1) == 0,
+	CHECK(session_add_win(s, 0, "my file.md", 10, 5, 500, 0, -1, NULL) == 0,
 		"win space label");
-	CHECK(session_add_win(s, 0, "tab\tname", 0, 0, 500, 0, -1) == 0,
+	CHECK(session_add_win(s, 0, "tab\tname", 0, 0, 500, 0, -1, NULL) == 0,
 		"win tab label");
-	CHECK(session_add_win(s, 1, "nl\nname", 42, 7, 1000, 1, 3) == 0,
+	CHECK(session_add_win(s, 1, "nl\nname", 42, 7, 1000, 1, 3, NULL) == 0,
 		"win newline label");
-	CHECK(session_add_win(s, 1, "", 0, 0, 0, 1, -1) == 0,
+	CHECK(session_add_win(s, 1, "", 0, 0, 0, 1, -1, NULL) == 0,
 		"win empty label");
 
 	fp = tmpfile();
@@ -113,6 +113,41 @@ main(void)
 	CHECK(r != 0, "late theme read back");
 	if (r)
 		CHECK(strcmp(r->theme, "catppuccin") == 0, "late theme value");
+	fclose(fp);
+	session_free(r);
+
+	/* Font name round-trips, and a win line without one reads
+	 * back with a NULL font (old sessions stay valid).
+	 */
+	s = session_alloc();
+	CHECK(session_add_col(s, 1000) == 0, "font col");
+	CHECK(session_add_win(s, 0, "a.txt", 0, 0, 500, 0, -1,
+		"-misc-fixed-medium-r-normal--18-180-75-75-c-90-iso8859-1") == 0,
+		"font win");
+	CHECK(session_add_win(s, 0, "b.txt", 0, 0, 500, 0, -1, NULL) == 0,
+		"nofont win");
+	fp = tmpfile();
+	CHECK(session_write(fp, s) == 0, "font write");
+	rewind(fp);
+	r = session_read(fp);
+	CHECK(r != 0, "font read back");
+	if (r) {
+		CHECK(strcmp(r->cols[0].wins[0].fontname,
+			"-misc-fixed-medium-r-normal--18-180-75-75-c-90-iso8859-1") == 0,
+			"font value");
+		CHECK(r->cols[0].wins[1].fontname == NULL, "nofont null");
+	}
+	fclose(fp);
+	session_free(s);
+	session_free(r);
+
+	fp = tmpfile();
+	fputs("wily-session 1\ncol 1000\nwin 5 a.txt 0 0 500 0 -1\n", fp);
+	rewind(fp);
+	r = session_read(fp);
+	CHECK(r != 0, "old win line read back");
+	if (r)
+		CHECK(r->cols[0].wins[0].fontname == NULL, "old win no font");
 	fclose(fp);
 	session_free(r);
 

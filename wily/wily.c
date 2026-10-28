@@ -10,7 +10,7 @@ int	tagheight;
 Tile	*wily=0;			/* encloses the whole application */
 
 char *wilytools = 	"Kill | Newcol Quit Putall SaveSession Theme wily-0.13.42 Dotfiles Font "; /* version */
-char *filetools = 	"Del Look .";
+char *filetools = 	"Del Look Bigger Smaller .";
 char *dirtools = 	"Del Look ..";
 char *columntools = "Delcol New Cut Paste Snarf Anchor Split | ";
 

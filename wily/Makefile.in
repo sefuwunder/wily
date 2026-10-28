@@ -21,7 +21,7 @@ OBJECTS= env.o include.o label.o file.o msg.o data.o line.o\
 	undo.o builtins.o util.o select.o\
 	mouse.o regexp.o text2.o \
 	sam.o text.o click.o tile.o search.o \
-	session.o sessionfmt.o markdown.o theme.o
+	session.o sessionfmt.o markdown.o theme.o xlfd.o fontsize.o
 
 MYLIBS=../libmsg/libmsg.a ../libframe/libframe.a ../libXg/libXg.a
 XLIBS=$(LIBS) @X_LIBS@ -lXt @X_PRE_LIBS@ -lX11 @X_EXTRA_LIBS@

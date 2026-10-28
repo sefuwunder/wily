@@ -8,14 +8,18 @@ without a fresh pick.
 ## Already present in both (no work)
 
 Cut, Paste, Snarf, Del, Delcol, New, Newcol, Get, Put, Putall, Indent,
-Undo, Redo, Look (partial — see below), Font (takes an argument),
-Zerox = Split, Exit = Quit, Dump/Load = SaveSession/RestoreSession.
+Undo, Redo, Look (partial — see below), Zerox = Split, Exit = Quit,
+Dump/Load = SaveSession/RestoreSession.
 
 ## Not gaps (verified)
 
 - **Local**: wily already chdirs to the window's directory before running
   every command (`wily/exec.c` ex_child). Acme's Local is wily's default.
-- **Font with argument**: `tile_setfont` already takes an argument.
+- **Font with argument**: CORRECTION (2026-10-28): `tile_setfont`
+  takes an argument but `view_setfont` ignores it — Font only toggles
+  between the two startup fonts. A real Font-with-argument is still an
+  open gap (the font-loading helper built for Bigger/Smaller,
+  `view_font_set_xlfd`, would make it small).
 - **Dump/Load**: covered by SaveSession/RestoreSession (own format).
 
 ## Gaps, ranked

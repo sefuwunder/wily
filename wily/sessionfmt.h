@@ -32,6 +32,7 @@ typedef struct SWin {
 	int	height;		/* permille of column height */
 	int	kind;		/* 0 = on disk, 1 = never saved */
 	int	backup;		/* backup index, or -1 */
+	char	*fontname;	/* XLFD font name, or NULL for default */
 } SWin;
 
 typedef struct SCol {
@@ -51,7 +52,8 @@ void	session_free(Session *s);
 int	session_add_col(Session *s, int width);
 int	session_add_win(Session *s, int col, const char *label,
 			unsigned long dot, unsigned long origin,
-			int height, int kind, int backup);
+			int height, int kind, int backup,
+			const char *fontname);
 int	session_write(FILE *fp, Session *s);
 Session *session_read(FILE *fp);
 

@@ -195,9 +195,15 @@ session_collect(Session *s, char *bakdir)
 						d->label);
 				bakidx++;
 			}
-			if (session_add_win(s, col, fpath, dot, origin,
-					height, kind, backup) != 0)
-				return -1;
+			{
+				char *fontname = view_font_xlfd(body);
+				int r = session_add_win(s, col, fpath,
+						dot, origin, height, kind,
+						backup, fontname);
+				free(fontname);
+				if (r != 0)
+					return -1;
+			}
 			nwin++;
 		}
 	}
@@ -463,6 +469,13 @@ session_restore(char *path)
 			view_select(bv, range(sw->dot <= len ?
 				sw->dot : len, sw->dot <= len ?
 				sw->dot : len));
+			/* A font the server no longer has must not fail
+			 * the restore; the window just keeps its
+			 * default font. */
+			if (sw->fontname &&
+			    view_font_set_xlfd(bv, sw->fontname) != 0)
+				diag(0, "session: unknown font %s",
+					sw->fontname);
 		}
 		session_restore_col = 0;
 		/* New columns contain only restored windows, so

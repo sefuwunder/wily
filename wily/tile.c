@@ -304,6 +304,24 @@ tile_setfont(Tile *t,char* arg) {
 	}
 }
 
+/* Step the font size of 't' and t's children. dir > 0 grows,
+ * dir < 0 shrinks; steps counts sizes. Returns 0, or the
+ * view_font_step error of the first body that fails. */
+int
+tile_font_step(Tile *t, int dir, int steps) {
+	if(t->body) {
+		return view_font_step(t->body, dir, steps);
+	} else {
+		int r = 0;
+		FOR_EACH_TILE(t->down, 0) {
+			int q = tile_font_step(t, dir, steps);
+			if (q != 0 && r == 0)
+				r = q;
+		}
+		return r;
+	}
+}
+
 /*
  * Unlink 'tile' from its parent/child/siblings.
  */

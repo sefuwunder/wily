@@ -42,6 +42,38 @@ builtin_font(View *v, char *arg) {
 	tile_setfont(view_tile(v), arg);
 }
 
+/* Bigger [n] / Smaller [n]: step the window's font size up or
+ * down n sizes (default 1). Only X-backed fonts resize; Plan 9
+ * font-file fonts report back instead of breaking. */
+static void
+font_step_cmd(View *v, char *arg, int dir, const char *name)
+{
+	int steps = 1, r;
+
+	if (arg && *arg) {
+		steps = atoi(arg);
+		if (steps <= 0)
+			steps = 1;
+		if (steps > 16)
+			steps = 16;
+	}
+	r = tile_font_step(view_tile(v), dir, steps);
+	if (r == -1)
+		diag(0, "%s: this font cannot be resized", name);
+	else if (r == -2)
+		diag(0, "%s: no larger/smaller font available", name);
+}
+
+void
+bigger(View *v, char *arg) {
+	font_step_cmd(v, arg, 1, "Bigger");
+}
+
+void
+smaller(View *v, char *arg) {
+	font_step_cmd(v, arg, -1, "Smaller");
+}
+
 static void
 builtin_autoindent(View *v, char *arg) {
 	View *body;
@@ -289,6 +321,7 @@ struct Cmd {
 /* _Must_ be kept in sorted order, we use bsearch on it */
 static Cmd builtins[] = {
 	{"Anchor", anchor},
+	{"Bigger", bigger},
 	{"Clear", clear},
 	{"Cut", cut},
 	{"Del", del},
@@ -309,6 +342,7 @@ static Cmd builtins[] = {
 	{"Redo", redo},
 	{"RestoreSession", session_restore_cmd},
 	{"SaveSession", session_save_cmd},
+	{"Smaller", smaller},
 	{"Snarf", builtin_snarf},
 	{"Split", split},
 	{"Theme", theme_cmd},

@@ -31,8 +31,10 @@ session_free(Session *s)
 	if (!s)
 		return;
 	for (i = 0; i < s->ncol; i++) {
-		for (j = 0; j < s->cols[i].nwin; j++)
+		for (j = 0; j < s->cols[i].nwin; j++) {
 			free(s->cols[i].wins[j].label);
+			free(s->cols[i].wins[j].fontname);
+		}
 		free(s->cols[i].wins);
 	}
 	free(s->cols);
@@ -63,7 +65,7 @@ session_add_col(Session *s, int width)
 int
 session_add_win(Session *s, int col, const char *label,
 		unsigned long dot, unsigned long origin,
-		int height, int kind, int backup)
+		int height, int kind, int backup, const char *fontname)
 {
 	SCol *c;
 	SWin *w;
@@ -94,6 +96,7 @@ session_add_win(Session *s, int col, const char *label,
 	w->height = height;
 	w->kind = kind;
 	w->backup = backup;
+	w->fontname = fontname ? strdup(fontname) : NULL;
 	return 0;
 }
 
@@ -120,9 +123,19 @@ session_write(FILE *fp, Session *s)
 				return -1;
 			if (len && fwrite(w->label, 1, len, fp) != len)
 				return -1;
-			if (fprintf(fp, " %lu %lu %d %d %d\n",
+			if (fprintf(fp, " %lu %lu %d %d %d",
 				w->dot, w->origin, w->height,
 				w->kind, w->backup) < 0)
+				return -1;
+			/* Optional trailing font name (no spaces in an
+			 * XLFD name, but the reader takes the whole rest
+			 * of the line, so paths with spaces survive too).
+			 * Old files have no trailing token: the reader
+			 * treats that as "default font". */
+			if (w->fontname &&
+			    fprintf(fp, " %s", w->fontname) < 0)
+				return -1;
+			if (fputc('\n', fp) == EOF)
 				return -1;
 		}
 	}
@@ -137,7 +150,8 @@ read_win(FILE *fp, Session *s, int col)
 {
 	unsigned long len, dot, origin;
 	int height, kind, backup;
-	char *label;
+	char *label, *fontname = NULL;
+	char rest[1024];
 
 	if (fscanf(fp, "%lu", &len) != 1 || len > MAXLABEL)
 		return -1;
@@ -160,8 +174,21 @@ read_win(FILE *fp, Session *s, int col)
 		free(label);
 		return -1;
 	}
+	/* Optional trailing font name: the rest of the line, trimmed.
+	 * Old files end the line here, giving an empty rest. */
+	if (fgets(rest, sizeof rest, fp)) {
+		char *p = rest, *end;
+		while (*p == ' ' || *p == '\t')
+			p++;
+		end = p + strlen(p);
+		while (end > p && (end[-1] == '\n' || end[-1] == '\r' ||
+		    end[-1] == ' ' || end[-1] == '\t'))
+			*--end = 0;
+		if (*p)
+			fontname = p;
+	}
 	if (session_add_win(s, col, label, dot, origin,
-			height, kind, backup) != 0) {
+			height, kind, backup, fontname) != 0) {
 		free(label);
 		return -1;
 	}
