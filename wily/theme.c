@@ -33,6 +33,21 @@ static Theme themes[] = {
 	{ "catppuccin",	"#cdd6f4", "#1e1e2e" },
 	/* Catppuccin Latte (light variant) */
 	{ "catppuccin-light", "#4c4f69", "#eff1f5" },
+	/* Solarized (dark): base0 on base03 */
+	{ "solarized",	"#839496", "#002b36" },
+	/* Solarized (light): base00 on base3 */
+	{ "solarized-light", "#657b83", "#fdf6e3" },
+	/* Nord (dark): nord4 on nord0 */
+	{ "nord",	"#d8dee9", "#2e3440" },
+	/* Nord Light: nord0 on nord6. Nord ships no official
+	 * light variant; this is the community inversion, the
+	 * same pair other nord-light ports use.
+	 */
+	{ "nord-light",	"#2e3440", "#eceff4" },
+	/* Rosé Pine (main): text on base */
+	{ "rose-pine",	"#e0def4", "#191724" },
+	/* Rosé Pine Dawn (light): text on base */
+	{ "rose-pine-dawn", "#575279", "#faf4ed" },
 };
 static int nthemes = sizeof themes / sizeof themes[0];
 static int curtheme = 0;
@@ -68,6 +83,15 @@ theme_lookup(const char *name)
 	if (strcmp(name, "latte") == 0 ||
 	    strcmp(name, "catppuccin-latte") == 0)
 		return 4;
+	if (strcmp(name, "solarized-dark") == 0)
+		return 5;
+	if (strcmp(name, "nord-dark") == 0)
+		return 7;
+	if (strcmp(name, "rose-pine-main") == 0)
+		return 9;
+	if (strcmp(name, "rose-pine-light") == 0 ||
+	    strcmp(name, "dawn") == 0)
+		return 10;
 	return -1;
 }
 
