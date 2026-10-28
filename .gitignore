@@ -1,0 +1,15 @@
+config.cache
+config.h*
+config.log 
+config.status
+configure
+autom4te.cache
+autom4te.cache/
+
+*.o
+*.a
+wily/wily
+
+Makefile
+lib*/Makefile
+wily/Makefile
