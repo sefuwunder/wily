@@ -128,6 +128,46 @@ ex_run(View*v, char *cmd) {
 }
 
 /*
+ * Run 'cmdline' as a shell command with stdout piped to 'vout' and
+ * stderr to the +Errors window, like a '|' pipe command but with an
+ * explicitly given output view instead of the selection's body.
+ * Used by the LLM builtin: the watcher script's output must land in
+ * the +LLM window, not replace the user's selection.
+ */
+void
+run_to_view(View *v, char *cmdline, View *vout)
+{
+	int	pout[2];
+	int	perr[2];
+	Path	label;
+	int	pid;
+
+	if (openpipes(pout, perr, true) != 0)
+		return;
+
+	data_getlabel(view_data(v), label);
+
+	switch (pid = fork()) {
+	case -1:
+		close(perr[0]); close(perr[1]);
+		close(pout[0]); close(pout[1]);
+		return;
+	default:	/* parent */
+		close(perr[1]);
+		close(pout[1]);
+		ex_parent(perr[0], pout[0], label, cmdline, vout, pid);
+		return;
+	case 0:		/* child */
+		close(perr[0]);
+		close(pout[0]);
+		ex_child(perr[1], pout[1], label, cmdline, 0);
+		/* ex_child doesn't return */
+		assert(false);
+		exit(1);
+	}
+}
+
+/*
  * Update 'cmd', 'vout' and 'vin' 
  * appropriately depending on whether 'cmd' is a piping command,
  * i.e. starts with | < or >.

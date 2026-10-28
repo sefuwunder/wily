@@ -47,6 +47,7 @@ void		kill_list			(void);
 /* exec.c */
 void		ex_init			(void);
 void		run				(View *, char *, char *);
+void		run_to_view			(View *, char *, View *);
 
 /* file.c */
 View *	data_open		(char*, Bool);

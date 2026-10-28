@@ -74,6 +74,157 @@ smaller(View *v, char *arg) {
 	font_step_cmd(v, arg, -1, "Smaller");
 }
 
+/* LLM context is clipped: loom's thinker has a bounded context budget,
+ * and a whole file is rarely the question. The clip is noted in the
+ * prompt so the thinker knows it is not seeing everything.
+ */
+#define LLM_CTX_MAX 4000
+
+/*
+ * LLM [question]: ask loom about the current window (see
+ * Doc/wily-llm.md). The question is the argument; the selection in a
+ * body view, if any, is context; the window's file path is named so
+ * the thinker can read the file itself with loom's tools.
+ *
+ * Nothing slow happens here. This builtin only writes a prompt file
+ * and starts tools/wily-llm/wily-llm.sh as a child, whose stdout is
+ * piped to the +LLM window as it arrives. The thinking itself runs in
+ * loom's daemon and ephemeral worker processes, so wily's event loop
+ * is never held hostage — the answer lands minutes later in +LLM
+ * while the user keeps editing.
+ *
+ * Idioms:
+ *   LLM <question>		question, plus the body selection as
+ *				context if there is one.
+ *   select text, chord-click LLM
+ *				the selection arrives as the argument;
+ *				it is context, and the question
+ *				defaults to explaining it.
+ *   LLM with no question and no selection
+ *				summarize the window (clipped).
+ */
+static void
+builtin_llm(View *v, char *arg)
+{
+	View *ls = last_selection;
+	View *body, *vllm;
+	Text *t;
+	Path label, path, llmlabel, promptpath;
+	char *question, *context = 0, *cmdline, *script;
+	char *tmpdir;
+	ulong len;
+	int clipped = 0;
+	static int counter = 0;
+	FILE *f;
+
+	/* Question: the argument, with leading blanks skipped. */
+	while (arg && (*arg == ' ' || *arg == '\t'))
+		arg++;
+	if (arg && !*arg)
+		arg = 0;
+	question = arg;
+
+	/* Context: the selection in a body view, if any. */
+	if (ISBODY(ls) && RLEN(ls->sel) > 0)
+		context = text_duputf(ls->t, ls->sel);
+
+	/* A chord-click passes the selection as the argument; that is
+	 * context, not a question.
+	 */
+	if (question && context && strcmp(question, context) == 0)
+		question = 0;
+	if (!question && context)
+		question = "Explain this selection.";
+	if (!question) {
+		/* No question and no selection: summarize the window. */
+		if (!view_win(v))
+			v = ls;
+		body = v ? view_body(v) : 0;
+		if (!body || !view_win(body)) {
+			diag(0, "LLM: type a question, e.g. LLM what does this do");
+			free(context);
+			return;
+		}
+		t = view_text(body);
+		len = text_length(t);
+		context = text_duputf(t, range(0, len));
+		question = "Summarize this file.";
+	}
+	if (context && strlen(context) > LLM_CTX_MAX) {
+		context[LLM_CTX_MAX] = '\0';
+		clipped = 1;
+	}
+
+	/* The window's file path, for the thinker to read. Labels are
+	 * stored contracted ($PWD/...), which would resolve against the
+	 * loom daemon's directory, not wily's — expand to a full path.
+	 */
+	label[0] = '\0';
+	if (view_win(v))
+		data_getlabel(view_data(v), label);
+	else if (ls && view_win(ls))
+		data_getlabel(view_data(ls), label);
+	if (label[0])
+		label2path(path, label);
+	else
+		path[0] = '\0';
+
+	/* Prompt file: unique per invocation; the watcher script removes
+	 * it once the job is submitted.
+	 */
+	tmpdir = getenv("TMPDIR");
+	snprintf(promptpath, sizeof promptpath, "%s/wily-llm-%d-%d.txt",
+		tmpdir ? tmpdir : "/tmp", (int)getpid(), counter++);
+	f = fopen(promptpath, "w");
+	if (!f) {
+		diag(0, "LLM: cannot write prompt file");
+		free(context);
+		return;
+	}
+	fprintf(f, "Question: %s\n", question);
+	fprintf(f, "File: %s\n", path[0] ? path : "(none)");
+	fprintf(f, "Context:\n");
+	if (context) {
+		fputs(context, f);
+		if (clipped)
+			fputs("\n[context clipped to 4000 chars]", f);
+	}
+	fputc('\n', f);
+	fclose(f);
+	free(context);
+
+	/* The +LLM window lives beside the file it was asked from. */
+	if (path[0]) {
+		dirnametrunc(path);
+	} else {
+		strcpy(path, wilydir);
+	}
+	if (!path[0])
+		strcpy(path, wilydir);
+	snprintf(llmlabel, sizeof llmlabel, "%s/+LLM", path);
+	vllm = openlabel(llmlabel, true);
+	if (!vllm) {
+		diag(0, "LLM: cannot open +LLM window");
+		unlink(promptpath);
+		return;
+	}
+	body = view_body(vllm);
+	/* Park the selection, empty, at the end: the watcher's first
+	 * output replaces the current selection, so this makes it an
+	 * append to the Q&A log instead of clobbering old answers.
+	 */
+	t = view_text(body);
+	len = text_length(t);
+	view_select(body, range(len, len));
+
+	script = getenv("WILEY_LLM");
+	cmdline = salloc(strlen(script ? script : "wily-llm") +
+		strlen(promptpath) + 2);
+	sprintf(cmdline, "%s %s", script ? script : "wily-llm", promptpath);
+	run_to_view(v, cmdline, body);
+	free(cmdline);
+}
+
 static void
 builtin_autoindent(View *v, char *arg) {
 	View *body;
@@ -331,6 +482,7 @@ static Cmd builtins[] = {
 	{"Get", get},
 	{"Indent", builtin_autoindent},
 	{"Kill", builtin_kill},
+	{"LLM", builtin_llm},
 	{"Look", look},
 	{"Markdown", markdown},
 	{"New", new},
