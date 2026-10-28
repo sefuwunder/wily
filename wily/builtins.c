@@ -340,5 +340,5 @@ builtin(View *v, char *cmd, char *arg)
 
 	if (c) 
 		(*c->cmd)(v, arg);
-	return (Bool) c;
+	return c != 0;
 }

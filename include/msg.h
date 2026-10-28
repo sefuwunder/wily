@@ -3,7 +3,17 @@
 
 typedef struct Msg Msg;
 typedef int Id;		/* Window identifier */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ > 201710L
+/* C23 made true/false keywords, so the old enum no longer compiles.
+ * (The threshold is "newer than C17": GCC 13 reports the C23 draft
+ * as 202000L, GCC 14+ as 202311L.) Bool is only ever used as a
+ * truth value, so bool is a drop-in replacement, and true/false
+ * are keywords now.
+ */
+typedef bool Bool;
+#else
 typedef enum Bool {false, true} Bool;
+#endif
 typedef struct Range Range;
 
 /* name of environment variable */
