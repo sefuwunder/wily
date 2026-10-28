@@ -1,25 +1,31 @@
 Themes
 ======
 
-Wily has three built-in color themes. They change only the
+Wily has five built-in color themes. They change only the
 foreground and background colors — text, selection (inverse
 video), scrollbars, borders and cursors all follow from those two
 — so a theme is a single pair of colors:
 
-    default     black on white            #000000 on #ffffff
-    tokyo       Tokyo Night (night)       #c0caf5 on #1a1b26
-    catppuccin  Catppuccin Mocha          #cdd6f4 on #1e1e2e
+    default           black on white            #000000 on #ffffff
+    tokyo             Tokyo Night (night)       #c0caf5 on #1a1b26
+    tokyo-light       Tokyo Night Day (light)   #3760bf on #e1e2e7
+    catppuccin        Catppuccin Mocha          #cdd6f4 on #1e1e2e
+    catppuccin-light  Catppuccin Latte (light)  #4c4f69 on #eff1f5
 
 Switching
 ---------
 
 * Click `Theme` on the main tag: it cycles
-  default → tokyo → catppuccin → default.
+  default → tokyo → tokyo-light → catppuccin → catppuccin-light
+  → default.
 * Run `Theme <name>` in any tag (middle-click it, as with any
-  command): `Theme tokyo`, `Theme catppuccin`, `Theme default`.
-  `tokyonight` and `mocha` are accepted as aliases. An unknown
+  command): `Theme tokyo-light`, `Theme catppuccin-light`,
+  `Theme default`. `tokyonight` is an alias for tokyo,
+  `tokyonight-day` and `day` for tokyo-light, `mocha` and
+  `catppuccin-mocha` for catppuccin, `latte` and
+  `catppuccin-latte` for catppuccin-light. An unknown
   name is reported and the current theme is left alone.
-* `wily -e "Theme tokyo"` starts themed.
+* `wily -e "Theme tokyo-light"` starts themed.
 
 The switch repaints every window in place: scroll positions,
 selections and layout are untouched.

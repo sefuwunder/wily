@@ -27,8 +27,12 @@ static Theme themes[] = {
 	{ "default",	"#000000", "#ffffff" },
 	/* Tokyo Night (night variant) */
 	{ "tokyo",	"#c0caf5", "#1a1b26" },
+	/* Tokyo Night Day (light variant) */
+	{ "tokyo-light",	"#3760bf", "#e1e2e7" },
 	/* Catppuccin Mocha */
 	{ "catppuccin",	"#cdd6f4", "#1e1e2e" },
+	/* Catppuccin Latte (light variant) */
+	{ "catppuccin-light", "#4c4f69", "#eff1f5" },
 };
 static int nthemes = sizeof themes / sizeof themes[0];
 static int curtheme = 0;
@@ -55,9 +59,15 @@ theme_lookup(const char *name)
 	/* aliases */
 	if (strcmp(name, "tokyonight") == 0)
 		return 1;
+	if (strcmp(name, "tokyonight-day") == 0 ||
+	    strcmp(name, "day") == 0)
+		return 2;
 	if (strcmp(name, "mocha") == 0 ||
 	    strcmp(name, "catppuccin-mocha") == 0)
-		return 2;
+		return 3;
+	if (strcmp(name, "latte") == 0 ||
+	    strcmp(name, "catppuccin-latte") == 0)
+		return 4;
 	return -1;
 }
 
