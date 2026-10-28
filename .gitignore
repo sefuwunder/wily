@@ -13,3 +13,5 @@ wily/wily
 Makefile
 lib*/Makefile
 wily/Makefile
+tools/wmail/wmail-sync
+tools/wmail/tests/test
